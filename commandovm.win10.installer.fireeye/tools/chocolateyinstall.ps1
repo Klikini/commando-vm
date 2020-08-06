@@ -34,6 +34,13 @@ function InstallOnePackage {
   param([hashtable] $pkg)
   $name = $pkg.name
   $pkgargs = $pkg.args
+  $repo = $pkg.repo
+
+  if ($repo -eq $null) {
+    Write-Warning "[!] Package $name does not have a repository defined, so not installing"
+    return $false
+  }
+
   try {
     $is64Only = $pkg.x64Only
   } catch {
@@ -61,7 +68,8 @@ function InstallOnePackage {
     $rc = iex "choco upgrade $name $args"
     Write-Host $rc
   } else {
-    choco upgrade $name $args
+    git clone --recurse-submodules $repo $name
+    iex "$name/tools/chocolateyInstall.ps1"
   }
 
   if ($([System.Environment]::ExitCode) -ne 0 -And $([System.Environment]::ExitCode) -ne 3010) {
